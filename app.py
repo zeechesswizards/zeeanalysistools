@@ -40,7 +40,7 @@ if uploaded_file is not None:
                 if c_lower in ['name', 'vendor', 'vendor name']:               col_mapping[c] = 'Name'
                 if c_lower in ['amount', 'amount (usd)', 'total amount']:      col_mapping[c] = 'Amount'
                 if c_lower in ['date', 'transaction date']:                    col_mapping[c] = 'Date'
-                if c_lower in ['no.', 'num', 'no', 'reference', 'doc number']:col_mapping[c] = 'No.'
+                if c_lower in ['no.', 'num', 'no', 'reference', 'doc number']: col_mapping[c] = 'No.'
                 if c_lower in ['account', 'account name', 'distribution account']: col_mapping[c] = 'Account'
                 if c_lower in ['split', 'distribution']:                       col_mapping[c] = 'Split'
                 if c_lower in ['type', 'transaction type', 'txn type']:        col_mapping[c] = 'Transaction Type'
@@ -256,40 +256,41 @@ if uploaded_file is not None:
             # LAYOUT ENGINE — compute all anchor positions dynamically
             # so tables NEVER overlap regardless of how many months are in data
             # ================================================================
-            TOP5_COLS = len(top_5_vendors.columns)   # Vendor + n months + Total
-            TOP5_ROWS = len(top_5_vendors)            # always 5
-            TREND_ROWS = len(trend_display)           # one row per fiscal month
-            GL_ROWS    = len(gl_summary)              # top 5 GL accounts
+            KPI_ROWS    = len(kpi_df)                 # Actual height of KPI table
+            TOP5_COLS   = len(top_5_vendors.columns)  # Vendor + n months + Total
+            TOP5_ROWS   = len(top_5_vendors)          # always 5
+            TREND_ROWS  = len(trend_display)          # one row per fiscal month
+            GL_ROWS     = len(gl_summary)             # top 5 GL accounts
             MOVERS_ROWS = len(movers_df)              # 6 up + 6 down = 12
-            NV_ROWS    = len(new_vendors_summary)
-            CTRL_ROWS  = len(controls_scorecard)      # 2 rows
+            NV_ROWS     = len(new_vendors_summary)
+            CTRL_ROWS   = len(controls_scorecard)     # 2 rows
             PARETO_ROWS = len(pareto_df)              # 2 rows
-            GAP = 2   # blank rows between tables
+            GAP = 4   # Increased gap to explicitly ensure 2 extra lines of space between blocks
 
             # Column anchors (0-based for startcol: 0=col A, 1=col B)
             COL_LEFT  = 1                        # col B — all left-side tables
             COL_RIGHT = COL_LEFT + TOP5_COLS + 1 # one blank gap column after top5
 
             # Row anchors — every position derived from actual data sizes
-            # so tables NEVER overlap regardless of months or data volume
-            ROW_KPI      = 1                                          # Excel row 2
-            ROW_TOP5     = ROW_KPI  + 2 + GAP                        # KPI header+data+gap
-            # Left side: GL sits below top5
-            ROW_GL       = ROW_TOP5 + TOP5_ROWS + 1 + GAP            # top5 header+data+gap
-            # Right side: Trend starts same row as top5
-            ROW_TREND    = ROW_TOP5
+            ROW_KPI       = 1
+            ROW_TOP5      = ROW_KPI + KPI_ROWS + 1 + GAP    # Left side: Uses actual KPI height
+            ROW_GL        = ROW_TOP5 + TOP5_ROWS + 1 + GAP  # Left side: GL sits below top5
+            ROW_TREND     = ROW_TOP5                        # Right side: Trend starts same row as top5
+
             # Controls sits below WHICHEVER is taller: top5+GL block vs trend block
-            left_bottom  = ROW_GL   + GL_ROWS   + 1 + GAP
-            right_bottom = ROW_TREND + TREND_ROWS + 1 + GAP
-            ROW_CONTROLS = max(left_bottom, right_bottom)
+            left_bottom   = ROW_GL   + GL_ROWS   + 1 + GAP
+            right_bottom  = ROW_TREND + TREND_ROWS + 1 + GAP
+            ROW_CONTROLS  = max(left_bottom, right_bottom)
+
             # Movers and new vendors sit below WHICHEVER is taller: GL block vs controls block
-            left_bottom2  = ROW_GL       + GL_ROWS   + 1 + GAP
+            left_bottom2  = ROW_GL        + GL_ROWS   + 1 + GAP
             right_bottom2 = ROW_CONTROLS + CTRL_ROWS + 1 + GAP
             ROW_MOVERS    = max(left_bottom2, right_bottom2)
             ROW_NEWVENDOR = ROW_MOVERS
+
             # Pareto sits below movers
             left_bottom3  = ROW_MOVERS + MOVERS_ROWS + 1 + GAP
-            right_bottom3 = ROW_MOVERS + NV_ROWS     + 1 + GAP
+            right_bottom3 = ROW_NEWVENDOR + NV_ROWS  + 1 + GAP
             ROW_PARETO    = max(left_bottom3, right_bottom3)
 
             # ----------------------------------------------------------------
