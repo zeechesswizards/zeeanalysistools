@@ -135,8 +135,8 @@ if uploaded_file is not None:
                 if prev_m in mom_pivot.columns and curr_m in mom_pivot.columns:
                     mom_pivot['Variance'] = mom_pivot[curr_m] - mom_pivot[prev_m]
                     mom_pivot = mom_pivot.drop(index='[Unassigned/Blank Vendor]', errors='ignore')
-                    top_up   = mom_pivot.nlargest(3,  'Variance').reset_index(); top_up['Status']   = 'SPIKED UP'
-                    top_down = mom_pivot.nsmallest(3, 'Variance').reset_index(); top_down['Status'] = 'DROPPED DOWN'
+                    top_up   = mom_pivot.nlargest(6,  'Variance').reset_index(); top_up['Status']   = 'SPIKED UP'
+                    top_down = mom_pivot.nsmallest(6, 'Variance').reset_index(); top_down['Status'] = 'DROPPED DOWN'
                     movers_df = pd.concat([top_up[['Name','Status','Variance']],
                                            top_down[['Name','Status','Variance']]])
                     movers_df.columns = ['Vendor','MoM Movement','Variance ($)']
@@ -258,20 +258,39 @@ if uploaded_file is not None:
             # ================================================================
             TOP5_COLS = len(top_5_vendors.columns)   # Vendor + n months + Total
             TOP5_ROWS = len(top_5_vendors)            # always 5
+            TREND_ROWS = len(trend_display)           # one row per fiscal month
+            GL_ROWS    = len(gl_summary)              # top 5 GL accounts
+            MOVERS_ROWS = len(movers_df)              # 6 up + 6 down = 12
+            NV_ROWS    = len(new_vendors_summary)
+            CTRL_ROWS  = len(controls_scorecard)      # 2 rows
+            PARETO_ROWS = len(pareto_df)              # 2 rows
+            GAP = 2   # blank rows between tables
 
-            # Row anchors (1-based Excel rows, but pd.ExcelWriter startrow is 0-based)
-            ROW_KPI       = 1   # Excel row 2  (startrow=1)
-            ROW_TOP5      = ROW_KPI + 6        # below KPI block + gap
-            ROW_GL        = ROW_TOP5 + TOP5_ROWS + 3   # below top5 + gap
-            ROW_TREND     = ROW_TOP5            # same row as top5, to the right
-            ROW_CONTROLS  = ROW_GL              # same row as GL, to the right
-            ROW_MOVERS    = ROW_GL + 8          # below GL block + gap
-            ROW_NEWVENDOR = ROW_MOVERS          # same row as movers, to the right
-            ROW_PARETO    = ROW_MOVERS + 5      # below movers + gap
+            # Column anchors (0-based for startcol: 0=col A, 1=col B)
+            COL_LEFT  = 1                        # col B — all left-side tables
+            COL_RIGHT = COL_LEFT + TOP5_COLS + 1 # one blank gap column after top5
 
-            # Column anchors (0-based for startcol, i.e. 0=col A, 1=col B)
-            COL_LEFT  = 1                        # col B — all left-side tables start here
-            COL_RIGHT = COL_LEFT + TOP5_COLS + 1 # one blank gap after top5 ends
+            # Row anchors — every position derived from actual data sizes
+            # so tables NEVER overlap regardless of months or data volume
+            ROW_KPI      = 1                                          # Excel row 2
+            ROW_TOP5     = ROW_KPI  + 2 + GAP                        # KPI header+data+gap
+            # Left side: GL sits below top5
+            ROW_GL       = ROW_TOP5 + TOP5_ROWS + 1 + GAP            # top5 header+data+gap
+            # Right side: Trend starts same row as top5
+            ROW_TREND    = ROW_TOP5
+            # Controls sits below WHICHEVER is taller: top5+GL block vs trend block
+            left_bottom  = ROW_GL   + GL_ROWS   + 1 + GAP
+            right_bottom = ROW_TREND + TREND_ROWS + 1 + GAP
+            ROW_CONTROLS = max(left_bottom, right_bottom)
+            # Movers and new vendors sit below WHICHEVER is taller: GL block vs controls block
+            left_bottom2  = ROW_GL       + GL_ROWS   + 1 + GAP
+            right_bottom2 = ROW_CONTROLS + CTRL_ROWS + 1 + GAP
+            ROW_MOVERS    = max(left_bottom2, right_bottom2)
+            ROW_NEWVENDOR = ROW_MOVERS
+            # Pareto sits below movers
+            left_bottom3  = ROW_MOVERS + MOVERS_ROWS + 1 + GAP
+            right_bottom3 = ROW_MOVERS + NV_ROWS     + 1 + GAP
+            ROW_PARETO    = max(left_bottom3, right_bottom3)
 
             # ----------------------------------------------------------------
             # 17. Web preview
