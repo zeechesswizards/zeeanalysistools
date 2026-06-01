@@ -165,7 +165,7 @@ if uploaded_file is not None:
                 })
 
             # ----------------------------------------------------------------
-            # 10. Weekend expense controls
+            # 10. Weekend expense controls — Added Description here
             # ----------------------------------------------------------------
             df_filtered['Is_Weekend'] = df_filtered['Date'].dt.dayofweek.isin([5, 6])
             weekend_tx = df_filtered[df_filtered['Is_Weekend']].copy()
@@ -175,7 +175,7 @@ if uploaded_file is not None:
                 "THREAT LEVEL": ["MEDIUM RISK" if len(weekend_tx) > 0 else "LOW RISK", "MONITOR"]
             })
             weekend_tx['Reason'] = 'Off-Hours Weekend Transaction'
-            leakage_report = (weekend_tx[['Date','Transaction Type','No.','Name','Account','Amount','Reason']]
+            leakage_report = (weekend_tx[['Date','Transaction Type','No.','Name','Description','Account','Amount','Reason']]
                               .sort_values('Amount', ascending=False))
 
             # ----------------------------------------------------------------
@@ -254,41 +254,35 @@ if uploaded_file is not None:
 
             # ================================================================
             # LAYOUT ENGINE — compute all anchor positions dynamically
-            # so tables NEVER overlap regardless of how many months are in data
             # ================================================================
-            KPI_ROWS    = len(kpi_df)                 # Actual height of KPI table
-            TOP5_COLS   = len(top_5_vendors.columns)  # Vendor + n months + Total
-            TOP5_ROWS   = len(top_5_vendors)          # always 5
-            TREND_ROWS  = len(trend_display)          # one row per fiscal month
-            GL_ROWS     = len(gl_summary)             # top 5 GL accounts
-            MOVERS_ROWS = len(movers_df)              # 6 up + 6 down = 12
+            KPI_ROWS    = len(kpi_df)                 
+            TOP5_COLS   = len(top_5_vendors.columns)  
+            TOP5_ROWS   = len(top_5_vendors)          
+            TREND_ROWS  = len(trend_display)          
+            GL_ROWS     = len(gl_summary)             
+            MOVERS_ROWS = len(movers_df)              
             NV_ROWS     = len(new_vendors_summary)
-            CTRL_ROWS   = len(controls_scorecard)     # 2 rows
-            PARETO_ROWS = len(pareto_df)              # 2 rows
-            GAP = 4   # Increased gap to explicitly ensure 2 extra lines of space between blocks
+            CTRL_ROWS   = len(controls_scorecard)     
+            PARETO_ROWS = len(pareto_df)              
+            GAP = 4   
 
-            # Column anchors (0-based for startcol: 0=col A, 1=col B)
-            COL_LEFT  = 1                        # col B — all left-side tables
-            COL_RIGHT = COL_LEFT + TOP5_COLS + 1 # one blank gap column after top5
+            COL_LEFT  = 1                        
+            COL_RIGHT = COL_LEFT + TOP5_COLS + 1 
 
-            # Row anchors — every position derived from actual data sizes
             ROW_KPI       = 1
-            ROW_TOP5      = ROW_KPI + KPI_ROWS + 1 + GAP    # Left side: Uses actual KPI height
-            ROW_GL        = ROW_TOP5 + TOP5_ROWS + 1 + GAP  # Left side: GL sits below top5
-            ROW_TREND     = ROW_TOP5                        # Right side: Trend starts same row as top5
+            ROW_TOP5      = ROW_KPI + KPI_ROWS + 1 + GAP    
+            ROW_GL        = ROW_TOP5 + TOP5_ROWS + 1 + GAP  
+            ROW_TREND     = ROW_TOP5                        
 
-            # Controls sits below WHICHEVER is taller: top5+GL block vs trend block
             left_bottom   = ROW_GL   + GL_ROWS   + 1 + GAP
             right_bottom  = ROW_TREND + TREND_ROWS + 1 + GAP
             ROW_CONTROLS  = max(left_bottom, right_bottom)
 
-            # Movers and new vendors sit below WHICHEVER is taller: GL block vs controls block
             left_bottom2  = ROW_GL        + GL_ROWS   + 1 + GAP
             right_bottom2 = ROW_CONTROLS + CTRL_ROWS + 1 + GAP
             ROW_MOVERS    = max(left_bottom2, right_bottom2)
             ROW_NEWVENDOR = ROW_MOVERS
 
-            # Pareto sits below movers
             left_bottom3  = ROW_MOVERS + MOVERS_ROWS + 1 + GAP
             right_bottom3 = ROW_NEWVENDOR + NV_ROWS  + 1 + GAP
             ROW_PARETO    = max(left_bottom3, right_bottom3)
@@ -314,23 +308,14 @@ if uploaded_file is not None:
             # ----------------------------------------------------------------
             output_buffer = io.BytesIO()
             with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
-                # Executive Dashboard — all anchored dynamically
-                kpi_df.to_excel(writer, sheet_name="Executive Dashboard",
-                                index=False, startrow=ROW_KPI,     startcol=COL_LEFT)
-                top_5_vendors.to_excel(writer, sheet_name="Executive Dashboard",
-                                       index=False, startrow=ROW_TOP5,    startcol=COL_LEFT)
-                gl_summary.to_excel(writer, sheet_name="Executive Dashboard",
-                                    index=False, startrow=ROW_GL,      startcol=COL_LEFT)
-                trend_display.to_excel(writer, sheet_name="Executive Dashboard",
-                                       index=False, startrow=ROW_TREND,   startcol=COL_RIGHT)
-                controls_scorecard.to_excel(writer, sheet_name="Executive Dashboard",
-                                            index=False, startrow=ROW_CONTROLS, startcol=COL_RIGHT)
-                movers_df.to_excel(writer, sheet_name="Executive Dashboard",
-                                   index=False, startrow=ROW_MOVERS,   startcol=COL_LEFT)
-                new_vendors_summary.to_excel(writer, sheet_name="Executive Dashboard",
-                                             index=False, startrow=ROW_NEWVENDOR, startcol=COL_RIGHT)
-                pareto_df.to_excel(writer, sheet_name="Executive Dashboard",
-                                   index=False, startrow=ROW_PARETO,   startcol=COL_LEFT)
+                kpi_df.to_excel(writer, sheet_name="Executive Dashboard", index=False, startrow=ROW_KPI, startcol=COL_LEFT)
+                top_5_vendors.to_excel(writer, sheet_name="Executive Dashboard", index=False, startrow=ROW_TOP5, startcol=COL_LEFT)
+                gl_summary.to_excel(writer, sheet_name="Executive Dashboard", index=False, startrow=ROW_GL, startcol=COL_LEFT)
+                trend_display.to_excel(writer, sheet_name="Executive Dashboard", index=False, startrow=ROW_TREND, startcol=COL_RIGHT)
+                controls_scorecard.to_excel(writer, sheet_name="Executive Dashboard", index=False, startrow=ROW_CONTROLS, startcol=COL_RIGHT)
+                movers_df.to_excel(writer, sheet_name="Executive Dashboard", index=False, startrow=ROW_MOVERS, startcol=COL_LEFT)
+                new_vendors_summary.to_excel(writer, sheet_name="Executive Dashboard", index=False, startrow=ROW_NEWVENDOR, startcol=COL_RIGHT)
+                pareto_df.to_excel(writer, sheet_name="Executive Dashboard", index=False, startrow=ROW_PARETO, startcol=COL_LEFT)
 
                 # Data sheets
                 recon_df.to_excel(writer,        sheet_name="Recon",        index=False)
@@ -355,7 +340,6 @@ if uploaded_file is not None:
                                 bottom=Side(style='thin', color='BFBFBF'))
 
             def style_table_header(ws, excel_row, start_col, num_cols, fill=None):
-                """Style a header row navy with white bold text."""
                 f = fill or navy_fill
                 for c in range(start_col, start_col + num_cols):
                     cell = ws.cell(row=excel_row, column=c)
@@ -363,9 +347,7 @@ if uploaded_file is not None:
                     cell.font  = white_bold
                     cell.alignment = Alignment(horizontal='center')
 
-            def style_table_data(ws, data_start_row, end_row, start_col, num_cols,
-                                 money_cols=None, bold_last_col=False):
-                """Apply zebra rows, currency format, borders."""
+            def style_table_data(ws, data_start_row, end_row, start_col, num_cols, money_cols=None, bold_last_col=False):
                 for r in range(data_start_row, end_row + 1):
                     for c in range(start_col, start_col + num_cols):
                         cell = ws.cell(row=r, column=c)
@@ -388,55 +370,33 @@ if uploaded_file is not None:
                 ws.views.sheetView[0].showGridLines = True
 
                 if sheet_name == "Executive Dashboard":
-                    # Excel rows are 1-based; our ROW_ vars are 0-based startrow
-                    # so Excel header row = ROW_ + 1 + 1 = ROW_ + 2
-                    # Excel data starts   = ROW_ + 2 + 1 = ROW_ + 3
-
-                    # KPI block
                     style_table_header(ws, ROW_KPI + 1,      COL_LEFT + 1, len(kpi_df.columns))
                     style_table_data(ws,   ROW_KPI + 2,      ROW_KPI + 1 + len(kpi_df), COL_LEFT + 1, len(kpi_df.columns))
 
-                    # Top 5 vendors — highlight Total col
                     style_table_header(ws, ROW_TOP5 + 1,     COL_LEFT + 1, TOP5_COLS)
-                    # Override Total col header to slightly different blue
                     ws.cell(row=ROW_TOP5 + 1, column=COL_LEFT + TOP5_COLS).fill = PatternFill(
                         start_color="2E75B6", end_color="2E75B6", fill_type="solid")
-                    money_month_cols = list(range(1, TOP5_COLS))  # all cols except Vendor (col 0)
-                    style_table_data(ws, ROW_TOP5 + 2, ROW_TOP5 + 1 + TOP5_ROWS,
-                                     COL_LEFT + 1, TOP5_COLS,
-                                     money_cols=money_month_cols, bold_last_col=True)
+                    money_month_cols = list(range(1, TOP5_COLS))  
+                    style_table_data(ws, ROW_TOP5 + 2, ROW_TOP5 + 1 + TOP5_ROWS, COL_LEFT + 1, TOP5_COLS, money_cols=money_month_cols, bold_last_col=True)
 
-                    # GL summary
                     style_table_header(ws, ROW_GL + 1,       COL_LEFT + 1, len(gl_summary.columns))
-                    style_table_data(ws,   ROW_GL + 2,       ROW_GL + 1 + len(gl_summary),
-                                     COL_LEFT + 1, len(gl_summary.columns), money_cols=[1])
+                    style_table_data(ws,   ROW_GL + 2,       ROW_GL + 1 + len(gl_summary), COL_LEFT + 1, len(gl_summary.columns), money_cols=[1])
 
-                    # Trend table
                     style_table_header(ws, ROW_TREND + 1,    COL_RIGHT + 1, len(trend_display.columns))
-                    style_table_data(ws,   ROW_TREND + 2,    ROW_TREND + 1 + len(trend_display),
-                                     COL_RIGHT + 1, len(trend_display.columns), money_cols=[1])
+                    style_table_data(ws,   ROW_TREND + 2,    ROW_TREND + 1 + len(trend_display), COL_RIGHT + 1, len(trend_display.columns), money_cols=[1])
 
-                    # Controls scorecard
                     style_table_header(ws, ROW_CONTROLS + 1, COL_RIGHT + 1, len(controls_scorecard.columns))
-                    style_table_data(ws,   ROW_CONTROLS + 2, ROW_CONTROLS + 1 + len(controls_scorecard),
-                                     COL_RIGHT + 1, len(controls_scorecard.columns))
+                    style_table_data(ws,   ROW_CONTROLS + 2, ROW_CONTROLS + 1 + len(controls_scorecard), COL_RIGHT + 1, len(controls_scorecard.columns))
 
-                    # Movers
                     style_table_header(ws, ROW_MOVERS + 1,   COL_LEFT + 1, len(movers_df.columns))
-                    style_table_data(ws,   ROW_MOVERS + 2,   ROW_MOVERS + 1 + len(movers_df),
-                                     COL_LEFT + 1, len(movers_df.columns), money_cols=[2])
+                    style_table_data(ws,   ROW_MOVERS + 2,   ROW_MOVERS + 1 + len(movers_df), COL_LEFT + 1, len(movers_df.columns), money_cols=[2])
 
-                    # New vendors
                     style_table_header(ws, ROW_NEWVENDOR + 1, COL_RIGHT + 1, len(new_vendors_summary.columns))
-                    style_table_data(ws,   ROW_NEWVENDOR + 2, ROW_NEWVENDOR + 1 + len(new_vendors_summary),
-                                     COL_RIGHT + 1, len(new_vendors_summary.columns), money_cols=[1])
+                    style_table_data(ws,   ROW_NEWVENDOR + 2, ROW_NEWVENDOR + 1 + len(new_vendors_summary), COL_RIGHT + 1, len(new_vendors_summary.columns), money_cols=[1])
 
-                    # Pareto
                     style_table_header(ws, ROW_PARETO + 1,   COL_LEFT + 1, len(pareto_df.columns))
-                    style_table_data(ws,   ROW_PARETO + 2,   ROW_PARETO + 1 + len(pareto_df),
-                                     COL_LEFT + 1, len(pareto_df.columns), money_cols=[2])
+                    style_table_data(ws,   ROW_PARETO + 2,   ROW_PARETO + 1 + len(pareto_df), COL_LEFT + 1, len(pareto_df.columns), money_cols=[2])
 
-                    # Bar chart — pinned to right of trend table
                     chart = BarChart()
                     chart.type, chart.style = "col", 10
                     chart.title = "Monthly Spend Trajectory"
@@ -444,12 +404,8 @@ if uploaded_file is not None:
                     chart.height, chart.width = 12, 18
                     trend_excel_header = ROW_TREND + 1
                     trend_excel_data_end = ROW_TREND + 1 + len(trend_display)
-                    chart.add_data(Reference(ws, min_col=COL_RIGHT + 2,
-                                             min_row=trend_excel_header,
-                                             max_row=trend_excel_data_end), titles_from_data=True)
-                    chart.set_categories(Reference(ws, min_col=COL_RIGHT + 1,
-                                                   min_row=trend_excel_header + 1,
-                                                   max_row=trend_excel_data_end))
+                    chart.add_data(Reference(ws, min_col=COL_RIGHT + 2, min_row=trend_excel_header, max_row=trend_excel_data_end), titles_from_data=True)
+                    chart.set_categories(Reference(ws, min_col=COL_RIGHT + 1, min_row=trend_excel_header + 1, max_row=trend_excel_data_end))
                     chart_col = get_column_letter(COL_RIGHT + len(trend_display.columns) + 3)
                     ws.add_chart(chart, f"{chart_col}{ROW_TREND + 1}")
 
@@ -458,8 +414,7 @@ if uploaded_file is not None:
                     for cell in ws[1]:
                         cell.fill = navy_fill
                         cell.font = white_bold
-                        cell.alignment = Alignment(
-                            horizontal='left' if str(cell.value or '').lower() in ('name','vendor') else 'center')
+                        cell.alignment = Alignment(horizontal='left' if str(cell.value or '').lower() in ('name','vendor') else 'center')
                     for row in range(2, ws.max_row + 1):
                         if row % 2 == 0:
                             for col in range(1, ws.max_column + 1):
